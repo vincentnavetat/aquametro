@@ -112,7 +112,7 @@ function init() {
   );
 
   // === Camera setup ===
-  camera.position.set(-2, 1, -2); // fixed position, like eye level
+  camera.position.set(-2.5, 1, -1.5);
   const target = new THREE.Vector3(0, 0, 0); // center of the scene
   const camPos = camera.position.clone();
 
