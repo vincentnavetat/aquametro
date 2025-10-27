@@ -7,6 +7,8 @@ import { Sky } from "three/addons/objects/Sky.js";
 
 let camera, scene, renderer;
 let sky, sun;
+let mixer;
+const clock = new THREE.Clock();
 
 init();
 animate();
@@ -14,6 +16,10 @@ animate();
 // === Animation loop ===
 function animate() {
   requestAnimationFrame(animate);
+
+  const delta = clock.getDelta();
+  if (mixer) mixer.update(delta);
+
   render();
 }
 
@@ -98,14 +104,28 @@ function init() {
   renderer.setClearColor(0x202020);
 
   // === Load model ===
+
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
   loader.load(
     "/public/models/station.glb",
     (gltf) => {
-      gltf.scene.scale.set(10, 10, 10);
-      gltf.scene.position.set(0, 0, 0);
-      scene.add(gltf.scene);
+      const model = gltf.scene;
+
+      console.log(
+        "Available animations:",
+        gltf.animations.map((a) => a.name),
+      );
+
+      mixer = new THREE.AnimationMixer(model);
+
+      const clip = gltf.animations[0];
+      const action = mixer.clipAction(clip);
+      action.play();
+
+      model.scale.set(10, 10, 10);
+      model.position.set(0, 0, 0);
+      scene.add(model);
     },
     undefined,
     (error) => console.error(error),
