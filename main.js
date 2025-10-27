@@ -13,16 +13,17 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-camera.position.set(0, 1, 5); // fixed position
+// === Camera setup ===
+camera.position.set(0, 1.6, 5); // fixed position, like eye level
 
-// === Lights ===
+// === Lighting ===
 const light = new THREE.DirectionalLight(0xffffff, 2);
 light.position.set(1, 1, 1);
 scene.add(light);
 scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 renderer.setClearColor(0x202020);
 
-// === Model ===
+// === Load model ===
 const loader = new GLTFLoader();
 loader.load(
   "/public/models/station.glb",
@@ -35,30 +36,49 @@ loader.load(
   (error) => console.error(error),
 );
 
-// === Mouse look setup ===
-let mouseX = 0;
-let mouseY = 0;
-const rotationSpeed = 0.002; // sensitivity
+// === Mouse look variables ===
+let yaw = 0;
+let pitch = 0;
+let isMouseDown = false;
+const sensitivity = 0.002;
+const maxPitch = Math.PI / 3; // 60° up/down limit
+
+// === Mouse events ===
+document.addEventListener("mousedown", () => {
+  isMouseDown = true;
+  document.body.requestPointerLock(); // lock cursor for smooth movement
+});
+
+document.addEventListener("mouseup", () => {
+  isMouseDown = false;
+  document.exitPointerLock();
+});
 
 document.addEventListener("mousemove", (event) => {
-  // Normalize mouse position to [-1, 1]
-  mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-  mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+  if (!isMouseDown) return;
+
+  const movementX = event.movementX || 0;
+  const movementY = event.movementY || 0;
+
+  yaw -= movementX * sensitivity;
+  pitch -= movementY * sensitivity;
+
+  // Clamp vertical look
+  pitch = Math.max(-maxPitch, Math.min(maxPitch, pitch));
+
+  camera.rotation.order = "YXZ";
+  camera.rotation.y = yaw;
+  camera.rotation.x = pitch;
 });
 
 // === Animation loop ===
 function animate() {
   requestAnimationFrame(animate);
-
-  // Rotate camera based on mouse
-  camera.rotation.y = -mouseX * Math.PI * rotationSpeed * 100;
-  camera.rotation.x = -mouseY * Math.PI * rotationSpeed * 50;
-
   renderer.render(scene, camera);
 }
 animate();
 
-// === Resize handling ===
+// === Handle window resize ===
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
