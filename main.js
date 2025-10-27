@@ -14,9 +14,6 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// === Camera setup ===
-camera.position.set(0, 1.6, 5); // fixed position, like eye level
-
 // === Lighting ===
 const light = new THREE.DirectionalLight(0xffffff, 2);
 light.position.set(1, 1, 1);
@@ -38,12 +35,27 @@ loader.load(
   (error) => console.error(error),
 );
 
+// === Camera setup ===
+camera.position.set(-2, 1, -2); // fixed position, like eye level
+const target = new THREE.Vector3(0, 0, 0); // center of the scene
+const camPos = camera.position.clone();
+
+const dir = new THREE.Vector3().subVectors(target, camPos).normalize();
+
+// Yaw (rotation around Y axis)
+let yaw = Math.atan2(-dir.x, -dir.z);
+
+// Pitch (rotation around X axis)
+let pitch = Math.asin(dir.y);
+
+camera.rotation.order = "YXZ";
+camera.rotation.y = yaw;
+camera.rotation.x = pitch;
+
 // === Mouse look variables ===
-let yaw = 0;
-let pitch = 0;
 let isMouseDown = false;
 const sensitivity = 0.002;
-const maxPitch = Math.PI / 3; // 60° up/down limit
+const maxPitch = Math.PI / 2 - 0.01;
 
 // === Mouse events ===
 document.addEventListener("mousedown", () => {
@@ -59,16 +71,12 @@ document.addEventListener("mouseup", () => {
 document.addEventListener("mousemove", (event) => {
   if (!isMouseDown) return;
 
-  const movementX = event.movementX || 0;
-  const movementY = event.movementY || 0;
-
-  yaw -= movementX * sensitivity;
-  pitch -= movementY * sensitivity;
+  yaw -= (event.movementX || 0) * sensitivity;
+  pitch -= (event.movementY || 0) * sensitivity;
 
   // Clamp vertical look
   pitch = Math.max(-maxPitch, Math.min(maxPitch, pitch));
 
-  camera.rotation.order = "YXZ";
   camera.rotation.y = yaw;
   camera.rotation.x = pitch;
 });
